@@ -9,7 +9,15 @@
         &nbsp; <b>Cuctom Lens Editor</b>
       </v-col>
       <v-col>
+        <v-btn            
+            text
+            @click="load_template()"
+          >Use Template
+        </v-btn>
+      </v-col>
+      <v-col>
         <v-file-input
+          v-if="!inputFile"
           v-model="inputFile"
           @change="readFile"
           placeholder="import JSON File"
@@ -17,13 +25,16 @@
         </v-col>
         <v-col align="center">          
         <v-btn
-            v-if="inputFile"
+            v-if="custom_lens"
             icon
             @click="dialog_preview = true"
           >
             <v-icon>mdi-eye</v-icon>
             Preview
-          </v-btn>
+        </v-btn>
+      </v-col>
+      <v-col cols="1">
+        <a href="https://github.com/juntinyeh/custom_lens_gui_editor/tree/main"><v-icon>mdi-github</v-icon></a>
       </v-col>
 
     </v-system-bar>
@@ -31,18 +42,15 @@
     <v-navigation-drawer
       app
     >
-      <v-divider></v-divider>
-
+      
       <v-list>
         <v-list-item
           v-for="[icon, pillar_id, pillar_name] in links"
           :key="pillar_id"
-          link
-        >
+          link>
           <v-list-item-icon>
             <v-icon>{{ icon }}</v-icon>
           </v-list-item-icon>
-
           <v-list-item-content>
             <v-list-item-title              
               @click="v_load_pillar(pillar_id, pillar_name)"
@@ -50,6 +58,25 @@
           </v-list-item-content>
         </v-list-item>
       </v-list>
+      <v-divider></v-divider>
+      <v-list>
+        <v-list-item>
+          <h5>Resources</h5>
+        </v-list-item>
+        <v-list-item>
+          <a href="https://www.wellarchitectedlabs.com/well-architectedtool/100_labs/100_custom_lenses_on_watool/">Well-Architected Labs - Custom Lens on WA-Tool</a>
+        </v-list-item>
+        <v-list-item>
+          <a href="https://docs.aws.amazon.com/wellarchitected/latest/userguide/lenses-custom.html">Official User Guide for Custom Lenses</a>
+        </v-list-item>
+        <v-list-item>
+          <a href="https://docs.aws.amazon.com/wellarchitected/latest/userguide/lenses-format-specification.html">Lens format specification</a>
+        </v-list-item>
+        <v-list-item>
+          <a href="https://aws.amazon.com/blogs/aws/well-architected-custom-lenses-internal-best-practices/">Blog: Well-Architected Custom Lenses for Internal Best Practices</a>
+        </v-list-item>
+        
+    </v-list>
     </v-navigation-drawer>
 
     <v-main>
@@ -95,7 +122,7 @@
                               @click="v_form_choice(q.id, qc.id)"
                               small>
                               mdi-pencil
-                            </v-icon>
+                            </v-icon> &nbsp;                            
                           </div>
                         </div>
                         <div align="right">
@@ -142,7 +169,19 @@
           >            
             <v-card>
               <v-card-title>
+                <div>
                 <span class="text-h5">Choice</span>
+                </div>
+                <div inline align="right">
+                <v-btn
+                      color="blue darken-1"
+                      text
+                      @click="dialog = false"
+                    >
+                      <v-icon>mdi-close</v-icon>
+                      
+                    </v-btn>
+                  </div>
               </v-card-title>
               <v-card-text>
                 <v-container>
@@ -223,20 +262,38 @@
               </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn
-                  color="blue darken-1"
-                  text
-                  @click="dialog = false"
-                >
-                  Close
-                </v-btn>
-                <v-btn
-                  color="blue darken-1"
-                  text
-                  @click="dialog = false;update_current_choice()"
-                >
-                  Save
-                </v-btn>
+                <v-row>
+                  <v-col col="1"
+                  align="left">
+                    <v-btn
+                      v-if="current_choice.id != 0"
+                      color="red"
+                      >
+                      <v-icon 
+                        @click="delete_type = 'choice'; v_form_delete('choice', current_question.id, current_choice.id)"
+                        medium>
+                        mdi-trash-can
+                      </v-icon>
+                    </v-btn>
+                  </v-col>
+                  <v-col  col="1">
+                    <v-btn
+                      color="blue"
+                      @click="dialog = false"
+                    >
+                      <v-icon>mdi-close</v-icon>
+                      
+                    </v-btn>
+                  </v-col>
+                  <v-col  col="1">
+                    <v-btn
+                      color="green"
+                      @click="dialog = false;update_current_choice()"
+                    >
+                    <v-icon>mdi-content-save-move</v-icon>
+                    </v-btn>
+                </v-col>
+              </v-row>
               </v-card-actions>
             </v-card>
           </v-dialog>
@@ -289,61 +346,130 @@
               </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn
-                  color="blue darken-1"
-                  text
-                  @click="dialog_risk = false"
-                >
-                  Close
-                </v-btn>
-                <v-btn
-                  color="blue darken-1"
-                  text
-                  @click="dialog_risk = false;update_current_question()"
-                >
-                  Save
-                </v-btn>
+                <v-row>
+                  <v-col col="1"
+                  align="left">
+                    <v-btn
+                      v-if="current_question.id != 0"
+                      color="red"
+                      >
+                      <v-icon 
+                        @click="delete_type = 'question'; v_form_delete('question', current_question.id, null)"
+                        medium>
+                        mdi-trash-can
+                      </v-icon>
+                    </v-btn>
+                  </v-col>
+                  <v-col  col="1">
+                    <v-btn
+                      color="blue"
+                      @click="dialog_risk = false"
+                    >
+                      Close
+                    </v-btn>
+                  </v-col>
+                  <v-col  col="1">
+                    <v-btn
+                      color="green"
+                      @click="dialog_risk = false;update_current_question()"
+                    >
+                      Save
+                    </v-btn>
+                  </v-col>
+                </v-row>
               </v-card-actions>
             </v-card>
           </v-dialog>
         </v-row>
 
         <v-row justify="center">
-    <v-dialog
-      v-model="dialog_preview"
-      fullscreen
-      hide-overlay
-      transition="dialog-bottom-transition"
-    >
-      <v-card>
-        <v-toolbar
-          dark
-          color="primary"
-        >
-          <v-btn
-            icon
-            dark
-            @click="dialog_preview = false"
+          <v-dialog
+            v-model="dialog_preview"
+            fullscreen
+            hide-overlay
+            transition="dialog-bottom-transition"
           >
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-          <v-toolbar-title>Custom Lens Preview</v-toolbar-title>
-          <v-spacer></v-spacer>
-          <v-toolbar-items>
-            <v-btn
-              dark
-              text
-              @click="saveFile()"
-            >
-              Save
-            </v-btn>
-          </v-toolbar-items>
-        </v-toolbar>
-        <div><pre>{{ JSON.stringify(this.custom_lens,'',2) }}</pre></div>
-      </v-card>
-    </v-dialog>
-  </v-row>
+            <v-card>
+              <v-toolbar
+                dark
+                color="primary"
+              >
+                <v-btn
+                  icon
+                  dark
+                  @click="dialog_preview = false"
+                >
+                  <v-icon>mdi-close</v-icon>
+                </v-btn>
+                <v-toolbar-title>Custom Lens Preview</v-toolbar-title>
+                <v-spacer></v-spacer>
+                <v-toolbar-items>
+                  <v-btn
+                    dark
+                    text
+                    @click="saveFile()"
+                  >
+                    Save
+                  </v-btn>
+                </v-toolbar-items>
+              </v-toolbar>
+              <div><pre>{{ JSON.stringify(this.custom_lens,'',2) }}</pre></div>
+            </v-card>
+          </v-dialog>
+        </v-row>
 
+        <v-row justify="center">
+          <v-dialog
+            v-model="dialog_delete"
+            persistent
+            max-width="400px"
+          >            
+            <v-card>
+              <v-card-title>
+                <span class="text-h5">Delete?</span>
+              </v-card-title>
+              <v-card-text>
+                <v-container>
+                  <v-row>
+                    <v-col cols="12">
+                      <v-text-field
+                        v-model="delete_message"
+                        disabled
+                        required
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12">
+                      <v-text-field
+                        v-model="delete_confirm"                        
+                        required
+                        label="Type in 'Delete' to confirm."
+                        placeholder="Delete"
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>                  
+                </v-container>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn
+                  v-if="delete_confirm=='Delete'"
+                  color="red darken-1"
+                  text
+                  @click="dialog_delete = false; dialog_risk = false; dialog = false;delete_current_object()"
+                >
+                  Delete
+                </v-btn>
+                <v-btn
+                  color="blue darken-1"
+                  text
+                  @click="dialog_delete = false;"
+                >
+                  Cancel
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+        </v-row>
 
 
 
@@ -374,6 +500,10 @@
       dialog : false,
       dialog_risk : false,
       dialog_preview : false,
+      dialog_delete : false,
+      delete_type : null,
+      delete_message : null,
+      delete_confirm : null,
       c_riskrule : '',
     }),
 
@@ -400,7 +530,7 @@
             JSON.parse(input_cl);
         }
         catch(e) {
-            this.err = JSON.stringify(e.message);
+            this.err = JSON.stringify(e.message);            
             console.log(this.err);            
             return "";
         }
@@ -441,51 +571,34 @@
 
       v_form_choice: function(question_id, choice_id){
         if(choice_id=='cl_create_new_choice'){this.reset_current_choice()}
-        this.questions.forEach((q) => {
-          if(q.id == question_id){
-            this.current_question = q;
-          }
-        });
-        this.current_question.choices.forEach((c) => {
-          if(c.id == choice_id){
-            this.current_choice = c;
-          }
-        });
+        this.get_current_question_by_id(question_id);
+        this.get_current_choice_by_id(choice_id);
         this.dialog = true;
       },
 
       v_form_question: function(question_id){
         if(question_id=='cl_create_new_question'){this.reset_current_question()}
-        this.questions.forEach((q) => {
-          if(q.id == question_id){
-            this.current_question = q;
-          }
-        });
-        this.c_riskrule = JSON.stringify(this.current_question.riskRules)
+        this.get_current_question_by_id(question_id);
         this.dialog_risk = true;
       },
 
+      v_form_delete: function(delete_type, question_id, choice_id){
+        this.get_current_question_by_id(question_id);        
+        if( delete_type == 'choice' ){
+          this.get_current_choice_by_id(choice_id);
+          this.delete_message = "Choice (" + this.current_choice.id + ") \n"+this.current_choice.title;
+        }
+        if( delete_type == 'question'){
+          this.delete_message = "Question (" + this.current_question.id + ") \n"+this.current_question.title;
+        }
+        
+        this.dialog_delete = true;
+      },
 
       update_current_choice(){
-        var target_c = -1;
-        var target_q = -1;
-        var target_p = -1;
-        this.current_question.choices.forEach((c,i) => {
-          if(c.id == this.current_choice.id){
-              target_c = i;
-            }
-          });
-        this.current_pillar.questions.forEach((q,i) => {
-          if(q.id == this.current_question.id){
-            target_q = i;
-          }
-        });  
-        this.custom_lens.pillars.forEach((p,i) => {
-          if(p.id == this.current_pillar.id){
-            target_p = i;
-          }
-        });
-
+        var target_c = this.get_current_choice_index();
+        var target_q = this.get_current_question_index();
+        var target_p = this.get_current_pillar_index();
         if(target_q >=0 && target_p >= 0){
           if(target_c >=0 ){
             this.custom_lens.pillars[target_p].questions[target_q].choices[target_c] = this.current_choice;
@@ -498,8 +611,8 @@
       },
 
       update_current_question(){
-        var target_q = -1;
-        var target_p = -1;
+        var target_q = this.get_current_question_index();
+        var target_p = this.get_current_pillar_index();
         var obj;
         try{
           obj = JSON.parse(this.c_riskrule);
@@ -508,16 +621,6 @@
         {
           alert("Invalid format for riskRules : " + err.message);
         }
-        this.current_pillar.questions.forEach((q,i) => {
-          if(q.id == this.current_question.id){
-            target_q = i;
-          }
-        });  
-        this.custom_lens.pillars.forEach((p,i) => {
-          if(p.id == this.current_pillar.id){
-            target_p = i;
-          }
-        });
         if( target_p >= 0 ){
           if (target_q >= 0 ){
             this.custom_lens.pillars[target_p].questions[target_q] = this.current_question;
@@ -531,6 +634,34 @@
         this.v_reload_pillar();
       },
 
+      get_current_choice_by_id(cid){
+        this.current_question.choices.forEach((c) => {
+          if(c.id == cid){
+            this.current_choice = c;
+          }
+        });
+      },
+
+      get_current_question_by_id(qid){
+        this.questions.forEach((q) => {
+          if(q.id == qid){
+            this.current_question = q;
+          }
+        });
+        this.c_riskrule = JSON.stringify(this.current_question.riskRules);        
+      },
+
+      get_current_choice_index(){
+        return this.current_question.choices.indexOf(this.current_choice);
+      },
+
+      get_current_question_index(){
+        return this.current_pillar.questions.indexOf(this.current_question);
+      },
+
+      get_current_pillar_index(){
+        return this.custom_lens.pillars.indexOf(this.current_pillar);
+      },
 
       saveFile() {
         const data = JSON.stringify(this.custom_lens)
@@ -574,6 +705,38 @@
                      "risk":"MEDIUM_RISK"
                   }],
         }
+      },
+
+      delete_current_object() {
+        var target_c = -1;
+        var target_q = this.get_current_question_index();
+        var target_p = this.get_current_pillar_index();
+        if(target_p > -1 && target_q > -1)
+        {
+          if(this.delete_type=='question'){
+          this.custom_lens.pillars[target_p].questions.splice(target_q, 1);
+          alert("question deleted:" + target_q);
+
+          }
+
+          if(this.delete_type=='choice'){
+            target_c = this.get_current_choice_index();
+            if (target_c > -1){
+              this.custom_lens.pillars[target_p].questions[target_q].choices.splice(target_c, 1);
+              alert("choice deleted:" + target_c);
+            }
+
+          }
+
+          }
+      }, 
+
+      load_template() {
+          this.reset_current_choice();
+          this.reset_current_question();
+          this.custom_lens = {"schemaVersion":"2021-11-01","name":"Replace with lens name","description":"Replace with your description","pillars":[{"id":"pillar_id_1","name":"Pillar 1","questions":[{"id":"pillar_1_q1","title":"My first question","description":"Description isn't a necessary property here for a question, but it might help your lens users.","choices":[{"id":"choice1","title":"Best practice #1","helpfulResource":{"displayText":"It's recommended that you include a helpful resource text and URL for each choice for your users.","url":"https://aws.amazon.com"},"improvementPlan":{"displayText":"You must have improvement plans per choice. It's optional whether or not to have a corresponding URL."}},{"id":"choice2","title":"Best practice #2","helpfulResource":{"displayText":"It's recommended that you include a helpful resource text and URL for each choice for your users.","url":"https://aws.amazon.com"},"improvementPlan":{"displayText":"You must have improvement plans per choice. It's optional whether or not to have a corresponding URL."}}],"riskRules":[{"condition":"choice1 && choice2","risk":"NO_RISK"},{"condition":"choice1 && !choice2","risk":"MEDIUM_RISK"},{"condition":"default","risk":"HIGH_RISK"}]}]}]};
+          this.custom_lens.ready = true;
+          this.v_update_pillars();
       }
     },
     beforeMount(){
