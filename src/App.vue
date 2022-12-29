@@ -266,14 +266,11 @@
                   <v-col col="1"
                   align="left">
                     <v-btn
-                      v-if="current_choice.id != 0"
+                      v-if="current_choice.id != ''"
                       color="red"
+                      @click="delete_type = 'choice'; v_form_delete(current_question.id, null)"
                       >
-                      <v-icon 
-                        @click="delete_type = 'choice'; v_form_delete('choice', current_question.id, current_choice.id)"
-                        medium>
-                        mdi-trash-can
-                      </v-icon>
+                      Delete
                     </v-btn>
                   </v-col>
                   <v-col  col="1">
@@ -281,16 +278,16 @@
                       color="blue"
                       @click="dialog = false"
                     >
-                      <v-icon>mdi-close</v-icon>
-                      
+                    Close
                     </v-btn>
                   </v-col>
                   <v-col  col="1">
                     <v-btn
+                      v-if="current_choice.id != ''"
                       color="green"
                       @click="dialog = false;update_current_choice()"
                     >
-                    <v-icon>mdi-content-save-move</v-icon>
+                    Update
                     </v-btn>
                 </v-col>
               </v-row>
@@ -350,14 +347,11 @@
                   <v-col col="1"
                   align="left">
                     <v-btn
-                      v-if="current_question.id != 0"
+                      v-if="current_question.id != ''"
                       color="red"
+                      @click="delete_type = 'question'; v_form_delete(current_question.id, null)"
                       >
-                      <v-icon 
-                        @click="delete_type = 'question'; v_form_delete('question', current_question.id, null)"
-                        medium>
-                        mdi-trash-can
-                      </v-icon>
+                      Delete
                     </v-btn>
                   </v-col>
                   <v-col  col="1">
@@ -370,10 +364,11 @@
                   </v-col>
                   <v-col  col="1">
                     <v-btn
+                    v-if="current_question.id != ''"
                       color="green"
                       @click="dialog_risk = false;update_current_question()"
                     >
-                      Save
+                      Update
                     </v-btn>
                   </v-col>
                 </v-row>
@@ -406,7 +401,6 @@
                 <v-toolbar-items>
                   <v-btn
                     dark
-                    text
                     @click="saveFile()"
                   >
                     Save
@@ -432,11 +426,9 @@
                 <v-container>
                   <v-row>
                     <v-col cols="12">
-                      <v-text-field
-                        v-model="delete_message"
-                        disabled
-                        required
-                      ></v-text-field>
+                      <div>
+                        <h4>Please make sure you are going to remove this item from custom lens structure: {{ delete_message }}
+                        </h4></div>
                     </v-col>
                     <v-col cols="12">
                       <v-text-field
@@ -454,14 +446,12 @@
                 <v-btn
                   v-if="delete_confirm=='Delete'"
                   color="red darken-1"
-                  text
                   @click="dialog_delete = false; dialog_risk = false; dialog = false;delete_current_object()"
                 >
                   Delete
                 </v-btn>
                 <v-btn
                   color="blue darken-1"
-                  text
                   @click="dialog_delete = false;"
                 >
                   Cancel
@@ -577,21 +567,24 @@
       },
 
       v_form_question: function(question_id){
-        if(question_id=='cl_create_new_question'){this.reset_current_question()}
-        this.get_current_question_by_id(question_id);
+        if(question_id=='cl_create_new_question'){
+          this.reset_current_question()
+        }
+        else{
+          this.get_current_question_by_id(question_id);
+        }
         this.dialog_risk = true;
       },
 
-      v_form_delete: function(delete_type, question_id, choice_id){
+      v_form_delete: function(question_id, choice_id){
         this.get_current_question_by_id(question_id);        
-        if( delete_type == 'choice' ){
+        if( this.delete_type == 'choice' ){
           this.get_current_choice_by_id(choice_id);
           this.delete_message = "Choice (" + this.current_choice.id + ") \n"+this.current_choice.title;
         }
-        if( delete_type == 'question'){
+        if( this.delete_type == 'question'){
           this.delete_message = "Question (" + this.current_question.id + ") \n"+this.current_question.title;
         }
-        
         this.dialog_delete = true;
       },
 
@@ -677,7 +670,7 @@
 
       reset_current_choice() {
         this.current_choice = { 
-          id :0,
+          id :'',
           title : "choice_title",
           description : "choice_description",
           helpfulResource : {
@@ -693,7 +686,7 @@
 
       reset_current_question() {
         this.current_question = { 
-        id: 0,
+        id: '',
         title : "question_title",
         description : "choice_description",
         riskRules : [{
@@ -714,9 +707,10 @@
         if(target_p > -1 && target_q > -1)
         {
           if(this.delete_type=='question'){
-          this.custom_lens.pillars[target_p].questions.splice(target_q, 1);
-          alert("question deleted:" + target_q);
-
+            this.custom_lens.pillars[target_p].questions.splice(target_q, 1);
+            alert("question deleted:" + target_q);
+            this.delete_confirm = null;
+            this.v_load_pillar(this.current_pillar.id, this.current_pillar.title);
           }
 
           if(this.delete_type=='choice'){
@@ -724,11 +718,12 @@
             if (target_c > -1){
               this.custom_lens.pillars[target_p].questions[target_q].choices.splice(target_c, 1);
               alert("choice deleted:" + target_c);
+              this.delete_confirm = null;
             }
 
           }
 
-          }
+        }
       }, 
 
       load_template() {
