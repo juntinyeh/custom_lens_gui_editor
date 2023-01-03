@@ -42,18 +42,45 @@
     <v-navigation-drawer
       app
     >
-      
-      <v-list>
+      <v-list
+        v-if="this.custom_lens"
+      >
+        <v-list-item
+          v-for="p in this.custom_lens.pillars"
+          :key="p"
+          color="orange lighten-1"
+          link>
+          <v-list-item-icon>
+            <v-icon>mdi-pillar</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title              
+              @click="v_load_pillar(p.id, p.name)"
+            >{{ p.name }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item>
+          <v-btn
+            @click="dialog_new_pillar = true"
+            color="green darken"
+            medium
+            > <v-icon
+            small>mdi-card-plus</v-icon> + New pillar.</v-btn>
+        </v-list-item>
+      </v-list>
+      <v-list
+      v-else>
         <v-list-item
           v-for="[icon, pillar_id, pillar_name] in links"
           :key="pillar_id"
+          color="orange lighten-1"
           link>
           <v-list-item-icon>
             <v-icon>{{ icon }}</v-icon>
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title              
-              @click="v_load_pillar(pillar_id, pillar_name)"
+              @click="v_load_pillar(pillar_id)"
             >{{ pillar_name }}</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
@@ -84,14 +111,34 @@
         class="py-8 px-6"
         fluid
       >
+        <v-row v-if="this.custom_lens">
+          <v-col cols="8">
+            <h6>Custom Lens:</h6>
+            <h1><v-text-field              
+              v-model="custom_lens.name">
+            </v-text-field></h1>
+          </v-col>
+        </v-row>
         <v-row>
           <v-col>
             <v-card
               class="overflow-auto"
-              >
+              >              
               <v-subheader>
-                <v-icon>mdi-pillar</v-icon>
-                <h1>{{ pillar_title }}</h1>
+                <v-row>
+                  <v-col><v-icon>mdi-pillar</v-icon>
+                    <!--h1 v-if="this.custom_lens != null">
+                      <v-text-field 
+                      label="pillar.name"
+                      v-model="current_pillar.name"
+                      @leave="v_reload_pillar()"></v-text-field>
+                    </h1-->
+                    <h1><v-text-field 
+                      label="pillar.name"
+                      v-model="pillar_name"
+                      disabled></v-text-field></h1>
+                  </v-col>                  
+                </v-row>
               </v-subheader>
               <v-list two-line
                 v-if="current_pillar"
@@ -460,6 +507,56 @@
             </v-card>
           </v-dialog>
         </v-row>
+        <v-row justify="center">
+          <v-dialog
+            v-model="dialog_new_pillar"
+            persistent
+            max-width="400px"
+          >            
+            <v-card>
+              <v-card-title>
+                <span class="text-h5">New Pillar</span>
+              </v-card-title>
+              <v-card-text>
+                <v-container>
+                  <v-row>
+                    <v-col cols="12">
+                      <v-text-field
+                        v-model="pillar_id"
+                        required
+                        label="Pillar ID, an unique key in [A-Za-z_], like SEC,OPS,COST,etc."
+                      ></v-text-field>
+                    </v-col>
+                    <v-col cols="12">
+                      <v-text-field
+                        v-model="pillar_name"
+                        required
+                        label="Pillar Name"
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>                  
+                </v-container>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn
+                  v-if="pillar_id!='' && pillar_name!=''"
+                  color="green darken-1"
+                  @click="dialog_new_pillar = false;append_new_pillar()"
+                >
+                  Create
+                </v-btn>
+                <v-btn
+                  color="blue darken-1"
+                  @click="dialog_new_pillar = false;"
+                >
+                  Cancel
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
+        </v-row>
 
 
 
@@ -471,7 +568,7 @@
 <script>
   export default {
     data: () => ({
-      pillar_title: 'Welcome to Well-Architected Custom Lens JSON Editor',
+      pillar_name: 'Welcome to Well-Architected Custom Lens JSON Editor',
       inputFile: null,
       links: [
         ['mdi-numeric-1', 'Pillar_1', 'Import a JSON file'],
@@ -486,11 +583,13 @@
       custom_lens : null,
       current_pillar : null,
       current_question : null , 
-      current_choice: null,      
+      current_choice: null,    
+      current_pillar_index : null,   
       dialog : false,
       dialog_risk : false,
       dialog_preview : false,
       dialog_delete : false,
+      dialog_new_pillar : false,
       delete_type : null,
       delete_message : null,
       delete_confirm : null,
@@ -541,11 +640,11 @@
         });
       },
 
-      v_load_pillar: function(pillar_id, pillar_name){
-        this.pillar_title = pillar_name;        
+      v_load_pillar: function(pillar_id){
         this.custom_lens.pillars.forEach((p) => {
           if(p.id==pillar_id){ this.current_pillar = p; }
         });
+        this.get_current_pillar_index();
         this.questions = [];
         this.current_pillar.questions.forEach((q) => {
           this.questions.push(q);
@@ -586,6 +685,15 @@
           this.delete_message = "Question (" + this.current_question.id + ") \n"+this.current_question.title;
         }
         this.dialog_delete = true;
+      },
+
+
+      append_new_pillar() {
+        this.reset_current_pillar();
+        this.current_pillar.id = this.pillar_id;
+        this.current_pillar.name = this.pillar_name;
+        this.custom_lens.pillars.push(this.current_pillar);
+        this.v_reload_pillar(this.current_pillar.id);
       },
 
       update_current_choice(){
@@ -653,7 +761,8 @@
       },
 
       get_current_pillar_index(){
-        return this.custom_lens.pillars.indexOf(this.current_pillar);
+        this.current_pillar_index = this.custom_lens.pillars.indexOf(this.current_pillar);
+        return this.current_pillar_index;
       },
 
       saveFile() {
@@ -697,7 +806,20 @@
                      "condition":"default",
                      "risk":"MEDIUM_RISK"
                   }],
+        choices : []
         }
+        this.reset_current_choice();
+        this.current_question.choices.push(this.current_choice);
+      },
+
+      reset_current_pillar() {
+        this.current_pillar = {
+          "id":"pillar_id_1",
+          "name":"Pillar 1",
+          "questions":[]
+        }
+        this.reset_current_question();
+        this.current_pillar.questions.push(this.current_question);
       },
 
       delete_current_object() {
