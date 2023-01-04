@@ -121,25 +121,27 @@
         </v-row>
         <v-row>
           <v-col>
-            <v-card
-              class="overflow-auto"
-              >              
-              <v-subheader>
-                <v-row>
-                  <v-col><v-icon>mdi-pillar</v-icon>
-                    <!--h1 v-if="this.custom_lens != null">
-                      <v-text-field 
-                      label="pillar.name"
-                      v-model="current_pillar.name"
-                      @leave="v_reload_pillar()"></v-text-field>
-                    </h1-->
-                    <h1><v-text-field 
-                      label="pillar.name"
-                      v-model="pillar_name"
-                      disabled></v-text-field></h1>
-                  </v-col>                  
-                </v-row>
-              </v-subheader>
+            <v-card>
+              <!--class="overflow-auto"-->
+              <v-row>
+                <v-col>
+                  <p v-if="current_pillar != null">Pillar ID: ({{ current_pillar.id }})</p>
+                  <p v-else>{{ pillar_id }}</p>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <h1 v-if="current_pillar != null">
+                    <v-text-field
+                    label="pillar.name"
+                    v-model="current_pillar.name"
+                    @leave="v_reload_pillar()"></v-text-field>
+                  </h1>
+                  <h1 v-else><v-text-field
+                    v-model="pillar_name"
+                    disabled></v-text-field></h1>
+                </v-col>
+              </v-row>
               <v-list two-line
                 v-if="current_pillar"
                 >
@@ -154,6 +156,11 @@
                         <v-icon>mdi-comment-question</v-icon>
                         ({{ q.id }})
                         {{ q.title }}
+                         <v-icon
+                              @click="v_form_question(q.id)"
+                              small>
+                              mdi-pencil
+                          </v-icon>
                         </div>
                       </v-expansion-panel-header>
                       <v-expansion-panel-content>
@@ -185,12 +192,6 @@
                           <b>riskRules</b>
                           <br />
                           {{q.riskRules}}
-                          <br />
-                          <v-icon 
-                              @click="v_form_question(q.id)"
-                              small>
-                              mdi-pencil
-                            </v-icon>
                         </div>
                       </v-expansion-panel-content>
                     </v-expansion-panel>
@@ -568,6 +569,7 @@
 <script>
   export default {
     data: () => ({
+      pillar_id : null,
       pillar_name: 'Welcome to Well-Architected Custom Lens JSON Editor',
       inputFile: null,
       links: [
@@ -796,8 +798,8 @@
       reset_current_question() {
         this.current_question = { 
         id: '',
-        title : "question_title",
-        description : "choice_description",
+        title : "Question_title, Click to see more detail",
+        description : "Question Description",
         riskRules : [{
                      "condition":"(!choice_key1) || choice_key2",
                      "risk":"HIGH_RISK"
