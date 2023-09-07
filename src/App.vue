@@ -6,7 +6,7 @@
           color="white darken-1"
           size="36"
         ><v-icon>mdi-code-json</v-icon></v-avatar>
-        &nbsp; <b>Cuctom Lens Editor</b>
+        &nbsp; <b>Custom Lens Editor</b>
       </v-col>
       <v-col>
         <v-btn            
